@@ -18,11 +18,14 @@ const App = () => {
   const [showModal, setShowModal] = useState(false);
   const [largeImgSrc, setLargeImgSrc] = useState("");
   const [allLoaded, setAllLoaded] = useState(false);
+  const [status, setStatus] = useState("idle");
 
   const handleFormSubmit = (keyWord) => {
     setKeyWord(keyWord);
     setPage(1);
     setPictures([]);
+    setAllLoaded(false);
+    setStatus("idle");
   };
   const onLoadMoreClick = () => {
     setPage((state) => state + 1);
@@ -41,10 +44,12 @@ const App = () => {
 
   useEffect(() => {
     if (keyWord === "") {
+      setAllLoaded(true);
       return;
     }
+    setStatus("pending");
+    setAllLoaded(true);
     const newsApiService = new NewsApiService();
-    //resetStates();
     newsApiService.query = keyWord;
     newsApiService.page = page;
     console.log(newsApiService.page);
@@ -53,6 +58,12 @@ const App = () => {
       .then((data) => {
         if (data.total) {
           setPictures((state) => [...state, ...data.hits]);
+          setStatus("resolved");
+          setAllLoaded(false);
+          window.scrollTo({
+            top: document.documentElement.scrollHeight,
+            behavior: "smooth",
+          });
           if (data.total === pictures.length || data.hits.length < 12) {
             setAllLoaded(true);
           }
@@ -60,13 +71,24 @@ const App = () => {
           throw new Error("No images found for this request!");
         }
       })
-      .catch((error) => setError(error));
+      .catch((error) => {
+        setAllLoaded(true);
+        setError(error);
+        setStatus("rejected");
+      });
   }, [keyWord, page]);
 
   return (
     <Wrapper>
       <Searchbar onSubmit={handleFormSubmit} />
-      <ImageGallery pictures={pictures} onClick={onImgClick} />
+
+      {status === "idle" && <Message>Enter key word for image search!</Message>}
+      {status === "pending" && <Loader />}
+      {status === "resolved" && (
+        <ImageGallery pictures={pictures} onClick={onImgClick} />
+      )}
+      {status === "rejected" && <Message>{error.message}</Message>}
+
       {!allLoaded && (
         <ButtonWrapper>
           <Button type="button" onClick={onLoadMoreClick}>
@@ -81,108 +103,7 @@ const App = () => {
           <button onClick={toggleModal}>Close Modal</button>
         </Modal>
       )}
-    </Wrapper>
-  );
 
-  /*
-  const [keyWord, setKeyWord] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [largeImgSrc, setLargeImgSrc] = useState("");
-  const [pictures, setPictures] = useState([]);
-  const [allLoaded, setAllLoaded] = useState(false);
-  const [error, setError] = useState(null);
-  const [status, setStatus] = useState('idle');
- 
-  const handleFormSubmit = (keyWord) => {
-    setKeyWord(keyWord);
-  };
-  const toggleModal = () => {
-    setShowModal(!showModal);
-  };
-  const onImgClick = (largeImageURL) => {
-    toggleModal();
-    setLargeImgSrc(largeImageURL);
-  };
-  const newsApiService = new NewsApiService();
- 
-  useEffect(() => {
-    if (keyWord === "") {
-      return;
-    }
-    setStatus("pending");
-    setAllLoaded(false);
-    newsApiService.resetPage();
-    newsApiService.query = keyWord;
-    console.log("ключевое слово:", newsApiService.query);
-    newsApiService
-      .fetchArticles()
-      .then((data) => {
-        if (data.total) {
-          setPictures(data.hits);
-          console.log("Пришли данные", data.hits);
-          setStatus("resolved");
-          console.log("state Pictures:", pictures);
-          if (data.total === pictures.length) {
-            setAllLoaded(true);
-          }
-        } else {
-          setAllLoaded(true);
-          throw new Error("No images found for this request!");
-        }
-      })
-      .catch((error) => { setError(error); setStatus("rejected") });
-  }, [keyWord]);
- 
- 
-  const onLoadMoreClick = () => {
-    if (!allLoaded) {
-      newsApiService
-        .fetchArticles()
-        .then((data) => {
-          if (data.total === pictures.length) {
-            setAllLoaded(true);
-          }
-          setPictures((state) => (
-            [...state, ...data.hits]
-          ));
-        })
-        .catch((error) => { setError(error); setStatus("rejected") });
-    }
-  };
- 
-  return (
-    <Wrapper>
-      <Searchbar onSubmit={handleFormSubmit} />
- 
-      {(status === "idle") &&
-        <Message>Enter key word for image search!</Message>}
-      {(status === "pending") &&
-        <Loader />}
-      {(status === "resolved") &&
-        <ImageGallery pictures={pictures} onClick={onImgClick} />}
-      {(status === "rejected") &&
-        <Message>{error.message}</Message>}
- 
-      {!allLoaded && (
-        <ButtonWrapper>
-          <Button type="button" onClick={onLoadMoreClick}>
-            Load more...
-          </Button>
-        </ButtonWrapper>
-      )}
- 
-      {showModal && (
-        <Modal onClose={toggleModal}>
-          <img
-            src={largeImgSrc}
-            alt=""
-            width="100%"
-            height="100%"
-          />
-          <button onClick={toggleModal}>Close Modal</button>
-        </Modal>
-      )}
- 
       <ToastContainer
         position="top-center"
         autoClose={2000}
@@ -195,7 +116,7 @@ const App = () => {
         pauseOnHover
       />
     </Wrapper>
-  );*/
+  );
 };
 
 export default App;
