@@ -35,10 +35,7 @@ const App = () => {
     setShowModal(!showModal);
   };
   const onImgClick = (largeImageURL) => {
-    console.log("click");
-
     toggleModal();
-
     setLargeImgSrc(largeImageURL);
   };
 
@@ -52,7 +49,6 @@ const App = () => {
     const newsApiService = new NewsApiService();
     newsApiService.query = keyWord;
     newsApiService.page = page;
-    console.log(newsApiService.page);
     newsApiService
       .fetchArticles()
       .then((data) => {
