@@ -17,17 +17,17 @@ const App = () => {
   const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [largeImgSrc, setLargeImgSrc] = useState("");
+  const [allLoaded, setAllLoaded] = useState(false);
 
   const handleFormSubmit = (keyWord) => {
     setKeyWord(keyWord);
-  };
-  const onMoreClick = () => {
-    setPage((state) => state + 1);
-  };
-  const resetStates = () => {
     setPage(1);
     setPictures([]);
   };
+  const onLoadMoreClick = () => {
+    setPage((state) => state + 1);
+  };
+
   const toggleModal = () => {
     setShowModal(!showModal);
   };
@@ -38,13 +38,13 @@ const App = () => {
 
     setLargeImgSrc(largeImageURL);
   };
+
   useEffect(() => {
-    const newsApiService = new NewsApiService();
     if (keyWord === "") {
       return;
     }
-
-    resetStates();
+    const newsApiService = new NewsApiService();
+    //resetStates();
     newsApiService.query = keyWord;
     newsApiService.page = page;
     console.log(newsApiService.page);
@@ -53,6 +53,9 @@ const App = () => {
       .then((data) => {
         if (data.total) {
           setPictures((state) => [...state, ...data.hits]);
+          if (data.total === pictures.length || data.hits.length < 12) {
+            setAllLoaded(true);
+          }
         } else {
           throw new Error("No images found for this request!");
         }
@@ -64,11 +67,13 @@ const App = () => {
     <Wrapper>
       <Searchbar onSubmit={handleFormSubmit} />
       <ImageGallery pictures={pictures} onClick={onImgClick} />
-      <ButtonWrapper>
-        <Button type="button" onClick={onMoreClick}>
-          Load more...
-        </Button>
-      </ButtonWrapper>
+      {!allLoaded && (
+        <ButtonWrapper>
+          <Button type="button" onClick={onLoadMoreClick}>
+            Load more...
+          </Button>
+        </ButtonWrapper>
+      )}
 
       {showModal && (
         <Modal onClose={toggleModal}>
