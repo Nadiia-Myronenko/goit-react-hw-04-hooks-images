@@ -12,12 +12,3 @@ export const List = styled.ul`
   margin-left: auto;
   margin-right: auto;
 `;
-export const Message = styled.p`
-  text-align: center;
-  padding-top: 20px;
-`;
-export const ButtonWrapper = styled.div`
-  display: flex;
-  justify-content: center;
-  padding-top: 20px;
-`;
